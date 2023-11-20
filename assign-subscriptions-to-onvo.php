@@ -31,16 +31,14 @@ function assign_to_onvo_and_charge_order(\WC_Order $order, string $customer_id, 
 		$order->update_meta_data('_onvo_payment_method_id', $payment_method_id);
 		$order->update_meta_data('_onvo_customer_id', $customer_id);
 		$order->update_meta_data('_requires_manual_renewal', false);
-		// $order->update_meta_data('_schedule_next_payment',$next_payment_date);
 
 		// Update order payment method and title
 		$order->set_payment_method($payment_method_gateway_id);
 		$order->set_payment_method_title($payment_method_gateway_title);
-		update_post_meta($order->id, '_schedule_next_payment', $next_payment_date);
+		if ($next_payment_date) {
+			update_post_meta($order->id, '_schedule_next_payment', $next_payment_date);
+		}
 		$order->save();
-
-
-
 
 		// Trigger renewal payment hook for the order
 		\WC_Subscriptions_Payment_Gateways::trigger_gateway_renewal_payment_hook($order);
