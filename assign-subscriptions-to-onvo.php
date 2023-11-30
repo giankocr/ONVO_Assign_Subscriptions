@@ -17,8 +17,9 @@ function assign_to_onvo_and_charge_order(\WC_Order $order, string $customer_id, 
 		$payment_gateway              	= \WC_Payment_Gateways::instance()->payment_gateways()['wc-onvo-payment-gateway'];
 		$payment_method_gateway_title 	= $payment_gateway->title;
 		$payment_method_gateway_id    	= $payment_gateway->id;
-		$next_payment_date				=  date('Y-m-d H:i:s',strtotime($schedule_next_payment));
-		$subscription = wcs_get_subscription($order->id);
+		$next_payment_date				= date('Y-m-d H:i:s',strtotime($schedule_next_payment));
+		$subscription 					= wcs_get_subscription($order->id);
+		$next_payment_date_change		= '';
 		
 		// Set customer ID for the subscription's customer
 		\ONVO\set_customer_id_for_wp_user(
@@ -35,19 +36,20 @@ function assign_to_onvo_and_charge_order(\WC_Order $order, string $customer_id, 
 		// Update order payment method and title
 		$order->set_payment_method($payment_method_gateway_id);
 		$order->set_payment_method_title($payment_method_gateway_title);
-		if ($next_payment_date) {
-			update_post_meta($order->id, '_schedule_next_payment', $next_payment_date);
-		}
-		$order->save();
 
-		// Trigger renewal payment hook for the order
-		\WC_Subscriptions_Payment_Gateways::trigger_gateway_renewal_payment_hook($order);
+		if($next_payment_date != '1970-01-01 00:00:00'){
+		$next_payment_date_change = 'Tambien se modificó la fecha de proximo pago a '.$next_payment_date ;
+		  update_post_meta($order->id, '_schedule_next_payment', $next_payment_date);
+		}
+		
+		$order->save();
 
 		$order->add_order_note(
 			sprintf(
-				'Se asigno MANUALMENTE el ONVO customer_id <i>%s</i> y el ONVO payment_method_id <i>%s</i> a la orden.',
+				'Se asigno MANUALMENTE el ONVO customer_id <i>%s</i> y el ONVO payment_method_id <i>%s</i> a la orden.<br>%s',
 				$customer_id,
-				$payment_method_id
+				$payment_method_id,
+				$next_payment_date_change
 			)
 		);
 	} catch (\Throwable $th) {
